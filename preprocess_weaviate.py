@@ -6,13 +6,13 @@ import spacy
 from spacy.tokens import Doc
 from spacy.language import Language
 
-from goldenverba.ingestion.fetch_github import (
+from fetch_github import (
     fetch_docs,
     download_file,
     is_link_working,
 )
-from goldenverba.ingestion.util import hash_string
-from goldenverba.ingestion.preprocess import chunk_docs
+from util import hash_string
+from preprocess import chunk_docs
 
 from wasabi import msg  # type: ignore[import]
 from dotenv import load_dotenv

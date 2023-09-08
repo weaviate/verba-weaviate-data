@@ -1,9 +1,9 @@
 import click
-from goldenverba.ingestion.init_schema import init_schema
-from goldenverba.ingestion.init_cache import init_cache
-from goldenverba.ingestion.init_suggestion import init_suggestion
-from goldenverba.ingestion.import_data import import_data
-from goldenverba.ingestion.import_weaviate import import_weaviate
+from init_schema import init_schema
+from init_cache import init_cache
+from init_suggestion import init_suggestion
+from import_data import import_data
+from import_weaviate import import_weaviate
 
 
 @click.group()

@@ -5,13 +5,13 @@ from wasabi import msg  # type: ignore[import]
 
 import spacy
 
-from goldenverba.ingestion.util import (
+from util import (
     setup_client,
     import_documents,
     import_chunks,
     import_suggestions,
 )
-from goldenverba.ingestion.preprocess import (
+from preprocess import (
     load_directory,
     convert_files,
     chunk_docs,
@@ -19,9 +19,9 @@ from goldenverba.ingestion.preprocess import (
     load_suggestions,
 )
 
-from goldenverba.ingestion.init_schema import init_schema
-from goldenverba.ingestion.init_cache import init_cache
-from goldenverba.ingestion.init_suggestion import init_suggestion
+from init_schema import init_schema
+from init_cache import init_cache
+from init_suggestion import init_suggestion
 
 from dotenv import load_dotenv
 

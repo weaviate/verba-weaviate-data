@@ -3,13 +3,13 @@ import os
 from wasabi import msg  # type: ignore[import]
 import spacy
 
-from goldenverba.ingestion.util import (
+from util import (
     setup_client,
     import_documents,
     import_chunks,
     import_weaviate_suggestions,
 )
-from goldenverba.ingestion.preprocess_weaviate import (
+from preprocess_weaviate import (
     retrieve_documentation,
     retrieve_blogs,
 )

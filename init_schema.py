@@ -1,7 +1,7 @@
 import os
 from wasabi import msg  # type: ignore[import]
 
-from goldenverba.ingestion.util import setup_client
+from util import setup_client
 
 from dotenv import load_dotenv
 
