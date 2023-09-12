@@ -12,6 +12,7 @@ from util import (
 from preprocess_weaviate import (
     retrieve_documentation,
     retrieve_blogs,
+    retrieve_transcripts
 )
 
 from dotenv import load_dotenv
@@ -34,8 +35,10 @@ def import_weaviate() -> None:
     # Download and preprocess data
     weaviate_blog, chunked_weaviate_blog = retrieve_blogs(nlp)
     weaviate_documentation, chunked_weaviate_documentation = retrieve_documentation(nlp)
+    weaviate_transcripts = retrieve_transcripts(nlp)
 
-    weaviate_data = weaviate_documentation + weaviate_blog
+
+    weaviate_data = weaviate_documentation + weaviate_blog + weaviate_transcripts
     chunked_weaviate_data = chunked_weaviate_blog + chunked_weaviate_documentation
 
     # Import data

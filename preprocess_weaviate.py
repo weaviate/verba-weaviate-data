@@ -14,6 +14,12 @@ from fetch_github import (
 from util import hash_string
 from preprocess import chunk_docs
 
+from transcript import (
+    load_configuration,
+    get_all_video_ids,
+    fetch_youtube_transcripts
+)
+
 from wasabi import msg  # type: ignore[import]
 from dotenv import load_dotenv
 
@@ -56,6 +62,40 @@ def retrieve_blogs(nlp: Language) -> tuple[list[Doc], list[Doc]]:
     chunked_weaviate_documentation = chunk_docs(weaviate_documentation, nlp)
 
     return weaviate_documentation, chunked_weaviate_documentation
+
+def retrieve_transcripts(
+    nlp: Language,
+    api_key: str,
+    channel_id: str,
+    doc_type: str = "Transcripts",
+) -> list[Doc]:
+    """Downloads video transcript from YouTube
+    @parameter api_key : str - YouTube API key
+    @parameter channel_id : str - YouTube channel ID
+    @parameter doc_type : str - Document type (code, blogpost, podcast)
+    @returns list[Doc] - A list of spaCy documents
+    """
+    print(f"Starting downloading {doc_type} from channel ID {channel_id}")
+
+    video_ids = get_all_video_ids(api_key, channel_id)
+    raw_transcripts = fetch_youtube_transcripts(video_ids)
+
+    transcripts = []
+    for transcript_dict in raw_transcripts:
+        for video_id, chunked_transcript in transcript_dict.items():
+            for chunk in chunked_transcript:
+                text = chunk['text']
+                doc = nlp(text)
+                doc.user_data = {
+                    "video_id": video_id,
+                    "start": chunk['start'],
+                    "duration": chunk['duration'],
+                    "doc_type": doc_type
+                }
+                transcripts.append(doc)
+
+    print(f"All {len(transcripts)} transcripts successfully processed")
+    return transcripts
 
 
 def download_from_github(
