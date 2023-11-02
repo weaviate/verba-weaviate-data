@@ -1,24 +1,17 @@
 import os
-
 import re
+from datetime import datetime
+import json
 
-import spacy
-from spacy.tokens import Doc
-from spacy.language import Language
+from goldenverba.components.reader.document import Document
 
 from fetch_github import (
     fetch_docs,
     download_file,
     is_link_working,
 )
-from util import hash_string
-from preprocess import chunk_docs
 
-from transcript import (
-    load_configuration,
-    get_all_video_ids,
-    fetch_youtube_transcripts
-)
+from transcript import load_configuration, get_all_video_ids, fetch_youtube_transcripts
 
 from wasabi import msg  # type: ignore[import]
 from dotenv import load_dotenv
@@ -26,14 +19,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def retrieve_documentation(nlp: Language) -> tuple[list[Doc], list[Doc]]:
+def retrieve_documentation():
     """Downloads the Weaviate documentation, preprocesses, and chunks it. Returns a list of full documents and a list of chunks
     @returns tuple[list[Document], list[Document]] - A tuple of list of documents and list of chunks
     """
-    nlp = spacy.blank("en")
-
-    weaviate_documentation = download_from_github(
-        nlp,
+    download_from_github(
         "weaviate",
         "weaviate-io",
         "developers/",
@@ -41,17 +31,12 @@ def retrieve_documentation(nlp: Language) -> tuple[list[Doc], list[Doc]]:
         "Documentation",
     )
 
-    chunked_weaviate_documentation = chunk_docs(weaviate_documentation, nlp)
 
-    return weaviate_documentation, chunked_weaviate_documentation
-
-
-def retrieve_blogs(nlp: Language) -> tuple[list[Doc], list[Doc]]:
+def retrieve_blogs():
     """Downloads the Weaviate documentation, preprocesses, and chunks it. Returns a list of full documents and a list of chunks
     @returns tuple[list[Document], list[Document]] - A tuple of list of documents and list of chunks
     """
-    weaviate_documentation = download_from_github(
-        nlp,
+    download_from_github(
         "weaviate",
         "weaviate-io",
         "blog/",
@@ -59,16 +44,12 @@ def retrieve_blogs(nlp: Language) -> tuple[list[Doc], list[Doc]]:
         "Blog",
     )
 
-    chunked_weaviate_documentation = chunk_docs(weaviate_documentation, nlp)
-
-    return weaviate_documentation, chunked_weaviate_documentation
 
 def retrieve_transcripts(
-    nlp: Language,
     api_key: str,
     channel_id: str,
-    doc_type: str = "Transcripts",
-) -> list[Doc]:
+    doc_type: str = "Video",
+):
     """Downloads video transcript from YouTube
     @parameter api_key : str - YouTube API key
     @parameter channel_id : str - YouTube channel ID
@@ -78,34 +59,17 @@ def retrieve_transcripts(
     print(f"Starting downloading {doc_type} from channel ID {channel_id}")
 
     video_ids = get_all_video_ids(api_key, channel_id)
+    print(video_ids)
     raw_transcripts = fetch_youtube_transcripts(video_ids)
-
-    transcripts = []
-    for transcript_dict in raw_transcripts:
-        for video_id, chunked_transcript in transcript_dict.items():
-            for chunk in chunked_transcript:
-                text = chunk['text']
-                doc = nlp(text)
-                doc.user_data = {
-                    "video_id": video_id,
-                    "start": chunk['start'],
-                    "duration": chunk['duration'],
-                    "doc_type": doc_type
-                }
-                transcripts.append(doc)
-
-    print(f"All {len(transcripts)} transcripts successfully processed")
-    return transcripts
 
 
 def download_from_github(
-    nlp: Language,
     owner: str,
     repo: str,
     folder_path: str,
     token: str = None,
     doc_type: str = "Documentation",
-) -> list[Doc]:
+):
     """Downloads .mdx/.md files from Github
     @parameter owner : str - Repo owner
     @parameter repo : str - Repo name
@@ -116,7 +80,7 @@ def download_from_github(
     """
     msg.divider(f"Starting downloading {doc_type} from {owner}/{repo}/{folder_path}")
     document_names = fetch_docs(owner, repo, folder_path, token)
-    raw_docs = []
+    docs = []
     for document_name in document_names:
         try:
             fetched_text, link, path = download_file(owner, repo, document_name, token)
@@ -124,19 +88,25 @@ def download_from_github(
             msg.fail(str(e))
 
         if filtering(path, doc_type):
-            doc = nlp(text=cleaning(fetched_text, doc_type))
-            doc.user_data = {
-                "doc_name": process_filename(str(path), doc_type),
-                "doc_hash": hash_string(str(path)),
-                "doc_type": doc_type,
-                "doc_link": process_url(str(path), doc_type, fetched_text),
-            }
-            msg.info(f"Loaded {doc.user_data['doc_name']}")
-            raw_docs.append(doc)
+            doc = Document(
+                text=cleaning(fetched_text, doc_type),
+                type=doc_type,
+                name=process_filename(str(path), doc_type),
+                path=path,
+                link=process_url(str(path), doc_type, fetched_text),
+                timestamp=str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+                reader="JSON",
+            )
 
-    msg.good(f"All {len(raw_docs)} files successfully loaded")
+            with open(f"data/{doc_type}/{doc.name}.json", "w") as writer:
+                json_obj = Document.to_json(doc)
+                json.dump(json_obj, writer)
+            msg.info(f"Loaded and saved {doc.name}")
+            docs.append(doc)
 
-    return raw_docs
+    msg.good(f"All {len(docs)} files successfully loaded")
+
+    return docs
 
 
 # Data Filtering
@@ -342,3 +312,10 @@ def blog_process_url(document_text: str) -> str:
     full_url = base_url + slug
 
     return full_url
+
+
+if __name__ == "__main__":
+    # retrieve_documentation()
+    # retrieve_blogs()
+    api, channel = load_configuration()
+    retrieve_transcripts(api, channel)

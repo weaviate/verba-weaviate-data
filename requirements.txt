@@ -1,0 +1,4 @@
+requests
+python-dotenv
+wasabi
+youtube_transcript_api

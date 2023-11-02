@@ -27,7 +27,11 @@ def fetch_docs(owner, repo, folder_path, token=None) -> list:
         item["path"]
         for item in response.json()["tree"]
         if item["path"].startswith(folder_path)
-        and (item["path"].endswith(".md") or item["path"].endswith(".mdx"))
+        and (
+            item["path"].endswith(".md")
+            or item["path"].endswith(".mdx")
+            or item["path"].endswith(".txt")
+        )
     ]
     return md_files
 
