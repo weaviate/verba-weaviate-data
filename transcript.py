@@ -65,7 +65,7 @@ def fetch_transcripts(video_ids):
             whole_text = description + " \n"
 
             for entry in transcript_data:
-                whole_text += entry["text"]
+                whole_text += entry["text"] + " "
 
             document_obj = Document(
                 text=whole_text,
