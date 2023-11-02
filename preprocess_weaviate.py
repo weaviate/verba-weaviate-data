@@ -11,7 +11,12 @@ from fetch_github import (
     is_link_working,
 )
 
-from transcript import load_configuration, get_all_video_ids, fetch_youtube_transcripts
+from transcript import (
+    load_configuration,
+    fetch_transcripts,
+    get_all_video_ids,
+    fetch_youtube_transcripts,
+)
 
 from wasabi import msg  # type: ignore[import]
 from dotenv import load_dotenv
@@ -59,8 +64,7 @@ def retrieve_transcripts(
     print(f"Starting downloading {doc_type} from channel ID {channel_id}")
 
     video_ids = get_all_video_ids(api_key, channel_id)
-    print(video_ids)
-    raw_transcripts = fetch_youtube_transcripts(video_ids)
+    fetch_transcripts(video_ids)
 
 
 def download_from_github(

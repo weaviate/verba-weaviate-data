@@ -4,6 +4,9 @@ from youtube_transcript_api import YouTubeTranscriptApi
 from dotenv import load_dotenv
 import os
 
+from goldenverba.components.reader.document import Document
+from goldenverba.components.chunking.chunk import Chunk
+
 API_ENDPOINT = "https://www.googleapis.com/youtube/v3/search"
 
 
@@ -34,7 +37,13 @@ def get_all_video_ids(api_key, channel_id):
 
         for item in data.get("items", []):
             if item["id"]["kind"] == "youtube#video":
-                video_ids.append(item["id"]["videoId"])
+                video_ids.append(
+                    (
+                        item["id"]["videoId"],
+                        item["snippet"]["title"],
+                        item["snippet"]["description"],
+                    )
+                )
 
         page_token = data.get("nextPageToken")
         if not page_token:
@@ -45,53 +54,45 @@ def get_all_video_ids(api_key, channel_id):
 
 # Fetch transcripts for each video ID
 def fetch_transcripts(video_ids):
-    transcripts = []
-
-    for video_id in video_ids:
+    for snippet_tuple in video_ids:
+        video_id = snippet_tuple[0]
+        title = snippet_tuple[1]
+        description = snippet_tuple[2]
         print(f"Downloading Transcript from {video_id}")
         try:
             transcript_data = YouTubeTranscriptApi.get_transcript(video_id)
-            chunked_transcript = []
-            chunk = []
-            chunk_start = 0
-            chunk_duration = 0
+            chunks = []
+            whole_text = description + " \n"
 
+            chunk_id = 0
             for entry in transcript_data:
-                # Initialize chunk start time
-                if not chunk:
-                    chunk_start = entry["start"]
-
-                # Add entry to chunk
-                chunk.append(entry["text"])
-                chunk_duration += entry["duration"]
-
-                if len(chunk) >= 20 or chunk_duration >= 300:
-                    chunked_transcript.append(
-                        {
-                            "start": chunk_start,
-                            "duration": chunk_duration,
-                            "text": " ".join(chunk),
-                        }
-                    )
-                    # Reset chunk
-                    chunk = []
-                    chunk_duration = 0
-
-            if chunk:
-                chunked_transcript.append(
-                    {
-                        "start": chunk_start,
-                        "duration": chunk_duration,
-                        "text": " ".join(chunk),
-                    }
+                chunk_obj = Chunk(
+                    text=entry["text"],
+                    doc_name=title,
+                    chunk_id=chunk_id,
+                    doc_uuid="",
+                    doc_type="Video",
                 )
+                chunk_id += 1
+                chunks.append(chunk_obj)
+                whole_text += entry["text"] + " \n"
 
-            transcripts.append({video_id: chunked_transcript})
+            document_obj = Document(
+                text=whole_text,
+                type="Video",
+                name=title,
+                link=f"https://www.youtube.com/watch?v={video_id}",
+                reader="JSON",
+            )
+            document_obj.chunks = chunks
+
+            with open(f"data/Video/{document_obj.name}.json", "w") as writer:
+                json_obj = Document.to_json(document_obj)
+                json.dump(json_obj, writer)
+                print(f"Loaded and saved {document_obj.name}")
 
         except:
             print(f"Failed to fetch transcript for video ID: {video_id}")
-
-    return transcripts
 
 
 def fetch_youtube_transcripts():
