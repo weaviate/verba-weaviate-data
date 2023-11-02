@@ -64,18 +64,8 @@ def fetch_transcripts(video_ids):
             chunks = []
             whole_text = description + " \n"
 
-            chunk_id = 0
             for entry in transcript_data:
-                chunk_obj = Chunk(
-                    text=entry["text"],
-                    doc_name=title,
-                    chunk_id=chunk_id,
-                    doc_uuid="",
-                    doc_type="Video",
-                )
-                chunk_id += 1
-                chunks.append(chunk_obj)
-                whole_text += entry["text"] + " \n"
+                whole_text += entry["text"]
 
             document_obj = Document(
                 text=whole_text,
@@ -84,7 +74,6 @@ def fetch_transcripts(video_ids):
                 link=f"https://www.youtube.com/watch?v={video_id}",
                 reader="JSON",
             )
-            document_obj.chunks = chunks
 
             with open(f"data/Video/{document_obj.name}.json", "w") as writer:
                 json_obj = Document.to_json(document_obj)
