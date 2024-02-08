@@ -319,7 +319,7 @@ def blog_process_url(document_text: str) -> str:
 
 
 if __name__ == "__main__":
-    retrieve_documentation()
-    retrieve_blogs()
+    #retrieve_documentation()
+    #retrieve_blogs()
     api, channel = load_configuration()
     retrieve_transcripts(api, channel)

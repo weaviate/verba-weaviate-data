@@ -3,6 +3,7 @@ import json
 from youtube_transcript_api import YouTubeTranscriptApi
 from dotenv import load_dotenv
 import os
+import re
 
 from goldenverba.components.reader.document import Document
 from goldenverba.components.chunking.chunk import Chunk
@@ -52,11 +53,27 @@ def get_all_video_ids(api_key, channel_id):
     return video_ids
 
 
+def format_string(s):
+    # Step 1: Convert to lowercase
+    s = s.lower()
+    
+    # Step 2: Replace spaces with underscores
+    s = s.replace(" ", "_")
+    
+    # Step 3: Remove characters that are not letters, numbers, or underscores
+    s = re.sub(r"[^a-z0-9_]", "", s)
+    
+    # Additional step: Capitalize specific words or acronyms if needed
+    # For example, if you want to capitalize 'llms' back, you'll need a more complex logic
+    # This step is highly specific and might require manual adjustments or additional rules
+    
+    return s
+
 # Fetch transcripts for each video ID
 def fetch_transcripts(video_ids):
     for snippet_tuple in video_ids:
         video_id = snippet_tuple[0]
-        title = snippet_tuple[1]
+        title = format_string(snippet_tuple[1])
         description = snippet_tuple[2]
         print(f"Downloading Transcript from {video_id}")
         try:
