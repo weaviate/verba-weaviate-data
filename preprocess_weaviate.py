@@ -36,6 +36,15 @@ def retrieve_documentation():
         "Documentation",
     )
 
+def retrieve_code():
+    download_from_github(
+        "weaviate",
+        "weaviate-io",
+        "_includes/code",
+        os.environ.get("GITHUB_TOKEN", ""),
+        "Code",
+    )
+
 
 def retrieve_blogs():
     """Downloads the Weaviate documentation, preprocesses, and chunks it. Returns a list of full documents and a list of chunks
@@ -198,7 +207,7 @@ def process_filename(file_path: str, document_type: str) -> str:
     @parameter document_type : str - Document Type
     @returns str - The preprocessed filename
     """
-    if document_type == "Documentation" or document_type == "Blog":
+    if document_type == "Documentation" or document_type == "Blog" or document_type == "Code" :
         return document_process_filename(file_path)
     else:
         return file_path
@@ -325,7 +334,8 @@ def blog_process_url(document_text: str) -> str:
 
 
 if __name__ == "__main__":
-    retrieve_documentation()
-    retrieve_blogs()
+    #retrieve_documentation()
+    #retrieve_blogs()
+    retrieve_code()
     #api, channel = load_configuration()
     #retrieve_transcripts(api, channel)
