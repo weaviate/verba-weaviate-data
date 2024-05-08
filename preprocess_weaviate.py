@@ -3,7 +3,7 @@ import re
 from datetime import datetime
 import json
 
-from goldenverba.components.reader.document import Document
+from goldenverba.components.document import Document
 
 from fetch_github import (
     fetch_docs,
@@ -92,21 +92,23 @@ def download_from_github(
             msg.fail(str(e))
 
         if filtering(path, doc_type):
-            doc = Document(
-                text=cleaning(fetched_text, doc_type),
-                type=doc_type,
-                name=process_filename(str(path), doc_type),
-                path=path,
-                link=process_url(str(path), doc_type, fetched_text),
-                timestamp=str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
-                reader="JSON",
-            )
+            text = cleaning(fetched_text, doc_type)
+            if len(text) > 500:
+                doc = Document(
+                    text=cleaning(fetched_text, doc_type),
+                    type=doc_type,
+                    name=process_filename(str(path), doc_type),
+                    path=path,
+                    link=process_url(str(path), doc_type, fetched_text),
+                    timestamp=str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+                    reader="JSON",
+                )
 
-            with open(f"data/{doc_type}/{doc.name}.json", "w") as writer:
-                json_obj = Document.to_json(doc)
-                json.dump(json_obj, writer)
-            msg.info(f"Loaded and saved {doc.name}")
-            docs.append(doc)
+                with open(f"data/{doc_type}/{doc.name}.json", "w") as writer:
+                    json_obj = Document.to_json(doc)
+                    json.dump(json_obj, writer)
+                msg.info(f"Loaded and saved {doc.name}")
+                docs.append(doc)
 
     msg.good(f"All {len(docs)} files successfully loaded")
 
@@ -171,7 +173,7 @@ def document_cleaning(document_str: str) -> str:
     text = re.sub(r"(?s)^.*?<!-- truncate -->\n?", "", text)
 
     # Step 2: Remove import statements
-    text = re.sub(r"import .*?;\n?", "", text)
+    text = re.sub(r"import\s+.*?from\s+['\"].*?['\"];\s*", "", text, flags=re.MULTILINE)
 
     # Remove all HTML-like tags
     text = re.sub(r"<[^>]+>", "", text)
@@ -181,8 +183,8 @@ def document_cleaning(document_str: str) -> str:
     text = re.sub(r":::\n?", "", text)
 
     # Step 5: Replace markdown image and link references with their text
-    text = re.sub(r"!\[(.*?)\]\(.*?\)", r"\1", text)  # Image links
-    text = re.sub(r"\[(.*?)\]\(.*?\)", r"\1", text)  # Normal links
+    # text = re.sub(r"!\[(.*?)\]\(.*?\)", r"\1", text)  # Image links
+    # text = re.sub(r"\[(.*?)\]\(.*?\)", r"\1", text)  # Normal links
 
     return text
 
@@ -212,7 +214,7 @@ def document_process_filename(file_path: str) -> str:
 
     # Check if there are at least two parts to extract
     if len(parts) < 2:
-        return None
+        return file_path
 
     # Remove the file extension from the last part
     filename_without_extension = os.path.splitext(parts[-1])[0]
@@ -231,7 +233,11 @@ def document_process_filename(file_path: str) -> str:
     base_name = re.sub(r"^\d+_", "", base_name)
     base_name = re.sub(r"\d{4}-\d{2}-\d{2}-", "", base_name)
 
-    return "-".join([prefix, base_name]) if prefix else base_name
+    # Capitalize the first letter of both prefix and base name
+    prefix = prefix.capitalize()
+    base_name = base_name.capitalize()
+
+    return " ".join([prefix, base_name]) if prefix else base_name
 
 
 # URL Processing

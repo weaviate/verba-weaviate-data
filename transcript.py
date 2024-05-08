@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 import os
 import re
 
-from goldenverba.components.reader.document import Document
-from goldenverba.components.chunking.chunk import Chunk
+from goldenverba.components.document import Document
+from goldenverba.components.chunk import Chunk
 
 API_ENDPOINT = "https://www.googleapis.com/youtube/v3/search"
 
