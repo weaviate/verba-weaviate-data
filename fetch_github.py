@@ -4,6 +4,7 @@ import base64
 from dotenv import load_dotenv
 
 load_dotenv()
+import aiohttp
 
 
 def fetch_docs(owner, repo, folder_path, token=None) -> list:
@@ -36,7 +37,7 @@ def fetch_docs(owner, repo, folder_path, token=None) -> list:
     return md_files
 
 
-def download_file(owner, repo, file_path, token=None) -> str:
+async def download_file(owner, repo, file_path, token=None) -> str:
     """Download files from Github based on filename
     @parameter owner : str - Repo owner
     @parameter repo : str - Repo name
@@ -49,12 +50,14 @@ def download_file(owner, repo, file_path, token=None) -> str:
         "Authorization": f"token {token}" if token else None,
         "Accept": "application/vnd.github.v3+json",
     }
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as response:
+            response.raise_for_status()
+            response_json = await response.json()
 
-    content_b64 = response.json()["content"]
-    link = response.json()["html_url"]
-    path = response.json()["path"]
+    content_b64 = response_json["content"]
+    link = response_json["html_url"]
+    path = response_json["path"]
     content = base64.b64decode(content_b64).decode("utf-8")
 
     return (content, link, path)
